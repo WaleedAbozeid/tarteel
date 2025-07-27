@@ -3,6 +3,11 @@ import 'package:provider/provider.dart';
 import '../providers/quran_provider.dart';
 import '../widgets/surah_card.dart';
 import '../widgets/feature_card.dart';
+import 'tajweed_screen.dart';
+import 'tafsir_screen.dart';
+import 'memorization_screen.dart';
+import 'search_screen.dart';
+import 'statistics_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,7 +22,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<QuranProvider>().loadSurahsOptimized();
-      context.read<QuranProvider>().loadTajweedRules();
     });
   }
 
@@ -59,6 +63,30 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.search, color: Colors.white),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SearchScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.analytics, color: Colors.white),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const StatisticsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
 
                 // الميزات الرئيسية
@@ -110,7 +138,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               icon: Icons.book,
                               color: const Color(0xFF2196F3),
                               onTap: () {
-                                // التنقل إلى شاشة التجويد
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const TajweedScreen(),
+                                  ),
+                                );
                               },
                             ),
                             FeatureCard(
@@ -119,7 +152,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               icon: Icons.lightbulb,
                               color: const Color(0xFFFF9800),
                               onTap: () {
-                                // التنقل إلى شاشة التفسير
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const TafsirScreen(),
+                                  ),
+                                );
                               },
                             ),
                             FeatureCard(
@@ -128,7 +166,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               icon: Icons.school,
                               color: const Color(0xFF9C27B0),
                               onTap: () {
-                                // التنقل إلى شاشة الحفظ
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const MemorizationScreen(),
+                                  ),
+                                );
                               },
                             ),
                           ],
