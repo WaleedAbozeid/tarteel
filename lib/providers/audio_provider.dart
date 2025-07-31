@@ -4,6 +4,77 @@ import 'package:permission_handler/permission_handler.dart';
 import '../models/quran_models.dart';
 
 class AudioProvider extends ChangeNotifier {
+  /// دالة توافقية: تشغيل آية عبر رابط الصوت (للتوافق مع الكود القديم)
+  Future<void> playAyah(String audioUrl, {String? reciterId, int? surahNumber, int? ayahNumber}) async {
+    // إذا توفرت أرقام السورة والآية، استخدم الدالة الجديدة
+    if (surahNumber != null && ayahNumber != null) {
+      await playAyahByNumber(surahNumber: surahNumber, ayahNumber: ayahNumber);
+      return;
+    }
+    // وإلا شغل الرابط مباشرة (للتوافق فقط)
+    try {
+      if (audioUrl.isEmpty) {
+        _recordingError = 'رابط الصوت غير متاح';
+        notifyListeners();
+        return;
+      }
+      if (_currentAudioUrl != audioUrl) {
+        await _stopCurrentAudio();
+        _currentAudioUrl = audioUrl;
+        _currentReciterId = reciterId ?? '';
+      }
+      await _audioPlayer.setSourceUrl(audioUrl);
+      await _applyAudioSettings();
+      await _audioPlayer.resume();
+      _isPlaying = true;
+      _isPaused = false;
+      _isLoading = false;
+      _recordingError = '';
+      notifyListeners();
+    } catch (e) {
+      _recordingError = 'خطأ في تشغيل الصوت: $e';
+      _isPlaying = false;
+      _isPaused = false;
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+  // قائمة القراء
+  List<Reciter> _reciters = [
+    Reciter(
+      id: '1',
+      name: 'عبد الباسط عبد الصمد (تجويد)',
+      nameAr: 'عبد الباسط عبد الصمد',
+      style: 'تجويد',
+      server: 'https://server.com/tajweed/', // مثال: رابط مجلد ملفات التجويد
+      rewaya: 'حفص عن عاصم',
+    ),
+    Reciter(
+      id: '2',
+      name: 'مشاري راشد العفاسي (ترتيل)',
+      nameAr: 'مشاري راشد العفاسي',
+      style: 'ترتيل',
+      server: 'https://server.com/tarteel/', // مثال: رابط مجلد ملفات الترتيل
+      rewaya: 'حفص عن عاصم',
+    ),
+  ];
+  Reciter? _selectedReciter;
+
+  List<Reciter> get reciters => _reciters;
+  Reciter? get selectedReciter => _selectedReciter;
+
+  void selectReciter(Reciter reciter) {
+    _selectedReciter = reciter;
+    notifyListeners();
+  }
+  // ... existing code ...
+
+  // تعيين وضع التشغيل التلقائي للآية التالية
+  void setAutoPlayNext(bool value) {
+    _autoPlayNext = value;
+    notifyListeners();
+  }
+
   final AudioPlayer _audioPlayer = AudioPlayer();
   
   // حالات التشغيل
@@ -193,43 +264,40 @@ class AudioProvider extends ChangeNotifier {
   }
 
   // تشغيل آية مع تحسينات شاملة
-  Future<void> playAyah(String audioUrl, {
-    String? reciterId,
-    int? surahNumber,
-    int? ayahNumber,
+  /// تشغيل آية بناءً على القارئ المختار (يدعم التجويد والترتيل)
+  Future<void> playAyahByNumber({
+    required int surahNumber,
+    required int ayahNumber,
   }) async {
     try {
-      // التحقق من صحة الرابط
+      if (_selectedReciter == null) {
+        _recordingError = 'يرجى اختيار القارئ أولاً';
+        notifyListeners();
+        return;
+      }
+      // مثال: بناء رابط الصوت حسب القارئ المختار
+      // يمكنك تعديل الصيغة حسب هيكلية السيرفر لديك
+      final audioUrl = '${_selectedReciter!.server}$surahNumber/$ayahNumber.mp3';
       if (audioUrl.isEmpty) {
         _recordingError = 'رابط الصوت غير متاح';
         notifyListeners();
         return;
       }
-
-      // إيقاف التشغيل الحالي إذا كان مختلفاً
       if (_currentAudioUrl != audioUrl) {
         await _stopCurrentAudio();
         _currentAudioUrl = audioUrl;
-        _currentReciterId = reciterId ?? '';
-        _currentSurahNumber = surahNumber ?? 0;
-        _currentAyahNumber = ayahNumber ?? 0;
+        _currentReciterId = _selectedReciter!.id;
+        _currentSurahNumber = surahNumber;
+        _currentAyahNumber = ayahNumber;
       }
-
-      // تعيين مصدر الصوت
       await _audioPlayer.setSourceUrl(audioUrl);
-      
-      // تطبيق الإعدادات
       await _applyAudioSettings();
-      
-      // بدء التشغيل
       await _audioPlayer.resume();
-      
       _isPlaying = true;
       _isPaused = false;
       _isLoading = false;
       _recordingError = '';
       notifyListeners();
-
     } catch (e) {
       _recordingError = 'خطأ في تشغيل الصوت: $e';
       _isPlaying = false;
@@ -410,6 +478,11 @@ class AudioProvider extends ChangeNotifier {
     _highQualityMode = !_highQualityMode;
     notifyListeners();
   }
+  
+  // تغيير إعدادات سرعة التلاوة
+  void changePlaybackSpeed(double speed) {
+    setPlaybackSpeed(speed);
+  }
 
   // تشغيل سورة كاملة
   Future<void> playSurah(List<Ayah> ayahs) async {
@@ -531,4 +604,4 @@ class AudioProvider extends ChangeNotifier {
     }
     super.dispose();
   }
-} 
+}

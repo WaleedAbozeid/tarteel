@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
 import '../providers/quran_provider.dart';
 import '../providers/audio_provider.dart';
@@ -95,289 +96,323 @@ class _SurahScreenState extends State<SurahScreen> {
       },
       child: Scaffold(
         backgroundColor: const Color(0xFF1A1A2E),
-        appBar: AppBar(
-          title: Text(
-            'سورة ${widget.surah.nameAr}',
-            style: const TextStyle(color: Colors.white),
-          ),
-          backgroundColor: const Color(0xFF16213E),
-          iconTheme: const IconThemeData(color: Colors.white),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () async {
-              try {
-                final audioProvider = context.read<AudioProvider>();
-                await audioProvider.stopAudio();
-                if (mounted) {
-                  Navigator.of(context).pop();
-                }
-              } catch (e) {
-                if (mounted) {
-                  Navigator.of(context).pop();
-                }
+        body: SafeArea(
+          child: Consumer2<QuranProvider, AudioProvider>(
+            builder: (context, quranProvider, audioProvider, child) {
+              if (quranProvider.isLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                );
               }
-            },
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () {
-                Navigator.pushNamed(context, '/audio-settings');
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.person),
-              onPressed: () {
-                Navigator.pushNamed(context, '/reciter-selection');
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.play_arrow),
-              onPressed: () {
-                if (_currentPage < _pages.length) {
-                  _playPage(_currentPage);
-                }
-              },
-            ),
-          ],
-        ),
-        body: Consumer2<QuranProvider, AudioProvider>(
-          builder: (context, quranProvider, audioProvider, child) {
-            if (quranProvider.isLoading) {
-              return const Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              );
-            }
 
-            if (quranProvider.currentSurahAyahs.isEmpty) {
-              return const Center(
-                child: Text(
-                  'لا توجد آيات متاحة',
-                  style: TextStyle(color: Colors.white),
-                ),
-              );
-            }
-
-            // استخدام الصفحات المحسنة - بدون استدعاء setState
-            if (_pages.isEmpty) {
-              // تحديث الصفحات بدون setState
-              final ayahs = quranProvider.currentSurahAyahs;
-              if (ayahs.isNotEmpty) {
-                // تأجيل تحديث الصفحات لتجنب مشاكل البناء
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    setState(() {
-                      _pages = _groupAyahsIntoPages(ayahs);
-                    });
-                  }
-                });
-              }
-            }
-            
-            if (_pages.isEmpty) {
-              return const Center(
-                child: Text(
-                  'لا توجد صفحات متاحة',
-                  style: TextStyle(color: Colors.white),
-                ),
-              );
-            }
-
-            return Column(
-              children: [
-                // معلومات السورة
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF16213E), Color(0xFF0F3460)],
-                    ),
+              if (quranProvider.currentSurahAyahs.isEmpty) {
+                return const Center(
+                  child: Text(
+                    'لا توجد آيات متاحة',
+                    style: TextStyle(color: Colors.white),
                   ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: const Color(0xFF4CAF50),
-                        radius: 25,
-                        child: Text(
-                          '${widget.surah.number}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
+                );
+              }
+
+              // استخدام الصفحات المحسنة - بدون استدعاء setState
+              if (_pages.isEmpty) {
+                // تحديث الصفحات بدون setState
+                final ayahs = quranProvider.currentSurahAyahs;
+                if (ayahs.isNotEmpty) {
+                  // تأجيل تحديث الصفحات لتجنب مشاكل البناء
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      setState(() {
+                        _pages = _groupAyahsIntoPages(ayahs);
+                      });
+                    }
+                  });
+                }
+              }
+              
+              if (_pages.isEmpty) {
+                return const Center(
+                  child: Text(
+                    'لا توجد صفحات متاحة',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                );
+              }
+
+              return Column(
+                children: [
+                  // شريط العنوان المدمج
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF16213E), Color(0xFF0F3460)],
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        // زر العودة
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () async {
+                            try {
+                              final audioProvider = context.read<AudioProvider>();
+                              await audioProvider.stopAudio();
+                              if (mounted) {
+                                Navigator.of(context).pop();
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                Navigator.of(context).pop();
+                              }
+                            }
+                          },
+                        ),
+                        
+                        // معلومات السورة
+                        Expanded(
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: const Color(0xFF4CAF50),
+                                radius: 20,
+                                child: Text(
+                                  '${widget.surah.number}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.surah.nameAr,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      'الصفحة ${_currentPage + 1} من ${_pages.length}',
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        
+                        // أزرار التحكم + زر التفسير
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              widget.surah.nameAr,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            IconButton(
+                              icon: const Icon(Icons.menu_book, color: Colors.amber),
+                              tooltip: 'تفسير السورة',
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/tafsir',
+                                  arguments: {'surah': widget.surah},
+                                );
+                              },
                             ),
-                            Text(
-                              'الصفحة ${_currentPage + 1} من ${_pages.length}',
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 14,
-                              ),
+                            IconButton(
+                              icon: const Icon(Icons.settings, color: Colors.white),
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/audio-settings');
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.person, color: Colors.white),
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/reciter-selection');
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.play_arrow, color: Colors.white),
+                              onPressed: () {
+                                if (_currentPage < _pages.length) {
+                                  _playPage(_currentPage);
+                                }
+                              },
                             ),
                           ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
 
-                // محتوى الصفحة
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(20),
+                  // محتوى الصفحة - يأخذ معظم المساحة
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F3460),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFF4CAF50).withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: SingleChildScrollView(
+                        child: RichText(
+                          text: TextSpan(
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24, // زيادة حجم الخط
+                              height: 2.5, // زيادة المسافة بين السطور
+                              fontFamily: 'Amiri',
+                            ),
+                            children: _pages[_currentPage].map((ayah) {
+                              return TextSpan(
+                                text: '${ayah.textAr} ﴿${ayah.number}﴾ ',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    _playAyah(ayah);
+                                    // إظهار رسالة تأكيد
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('تشغيل الآية ${ayah.number}'),
+                                        backgroundColor: const Color(0xFF4CAF50),
+                                        duration: const Duration(seconds: 1),
+                                        behavior: SnackBarBehavior.floating,
+                                        margin: const EdgeInsets.all(16),
+                                      ),
+                                    );
+                                  },
+                              );
+                            }).toList(),
+                          ),
+                          textAlign: TextAlign.justify,
+                          textDirection: TextDirection.rtl,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // أزرار التنقل بين الصفحات - مصغرة
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F3460),
-                      borderRadius: BorderRadius.circular(16),
+                      color: const Color(0xFF16213E).withOpacity(0.9),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(16),
+                      ),
                       border: Border.all(
                         color: const Color(0xFF4CAF50).withOpacity(0.3),
                         width: 1,
                       ),
                     ),
-                    child: SingleChildScrollView(
-                      child: RichText(
-                        text: TextSpan(
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            height: 2.2,
-                            fontFamily: 'Amiri',
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // زر الصفحة السابقة
+                        Container(
+                          decoration: BoxDecoration(
+                            color: _currentPage > 0 
+                                ? const Color(0xFF4CAF50) 
+                                : Colors.grey.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          children: _pages[_currentPage].map((ayah) {
-                            return TextSpan(
-                              text: '${ayah.textAr} ﴿${ayah.number}﴾ ',
-                              style: const TextStyle(
-                                color: Colors.white,
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                        textAlign: TextAlign.justify,
-                        textDirection: TextDirection.rtl,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // أزرار التنقل بين الصفحات
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF16213E).withOpacity(0.9),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
-                    border: Border.all(
-                      color: const Color(0xFF4CAF50).withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // زر الصفحة السابقة
-                      Container(
-                        decoration: BoxDecoration(
-                          color: _currentPage > 0 
-                              ? const Color(0xFF4CAF50) 
-                              : Colors.grey.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: IconButton(
-                          onPressed: _currentPage > 0
-                              ? () {
-                                  setState(() {
-                                    _currentPage--;
-                                  });
-                                }
-                              : null,
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        ),
-                      ),
-                      
-                      // معلومات الصفحة
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0F3460),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: const Color(0xFF4CAF50).withOpacity(0.3),
+                          child: IconButton(
+                            onPressed: _currentPage > 0
+                                ? () {
+                                    setState(() {
+                                      _currentPage--;
+                                    });
+                                  }
+                                : null,
+                            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
                           ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'الصفحة ${_currentPage + 1} من ${_pages.length}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textDirection: TextDirection.rtl,
+                        
+                        // معلومات الصفحة
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F3460),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFF4CAF50).withOpacity(0.3),
                             ),
-                            const SizedBox(width: 16),
-                            GestureDetector(
-                              onTap: () {
-                                _playPage(_currentPage);
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF4CAF50),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.playlist_play,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'الصفحة ${_currentPage + 1} من ${_pages.length}',
+                                style: const TextStyle(
                                   color: Colors.white,
-                                  size: 20,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                                textDirection: TextDirection.rtl,
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () {
+                                  _playPage(_currentPage);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF4CAF50),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Icon(
+                                    Icons.playlist_play,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      
-                      // زر الصفحة التالية
-                      Container(
-                        decoration: BoxDecoration(
-                          color: _currentPage < _pages.length - 1 
-                              ? const Color(0xFF4CAF50) 
-                              : Colors.grey.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(12),
+                        
+                        // زر الصفحة التالية
+                        Container(
+                          decoration: BoxDecoration(
+                            color: _currentPage < _pages.length - 1 
+                                ? const Color(0xFF4CAF50) 
+                                : Colors.grey.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: IconButton(
+                            onPressed: _currentPage < _pages.length - 1
+                                ? () {
+                                    setState(() {
+                                      _currentPage++;
+                                    });
+                                  }
+                                : null,
+                            icon: const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                          ),
                         ),
-                        child: IconButton(
-                          onPressed: _currentPage < _pages.length - 1
-                              ? () {
-                                  setState(() {
-                                    _currentPage++;
-                                  });
-                                }
-                              : null,
-                          icon: const Icon(Icons.arrow_forward, color: Colors.white),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

@@ -2,12 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/quran_provider.dart';
 import 'providers/audio_provider.dart';
+import 'providers/theme_provider.dart';
+import 'providers/progress_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/recitation_screen.dart';
 import 'screens/surah_screen.dart';
 import 'screens/reciter_selection_screen.dart';
 import 'screens/audio_settings_screen.dart';
+import 'screens/settings_screen.dart';
 import 'models/quran_models.dart';
+import 'screens/tajweed_screen.dart';
+import 'screens/tafsir_screen.dart';
+import 'screens/memorization_screen.dart';
+import 'screens/tafsir_screen.dart';
 
 void main() {
   runApp(const TarteelApp());
@@ -22,34 +29,14 @@ class TarteelApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => QuranProvider()),
         ChangeNotifierProvider(create: (_) => AudioProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => ProgressProvider()),
       ],
-      child: MaterialApp(
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) => MaterialApp(
         title: 'ترتيل - تطبيق القرآن الذكي',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primarySwatch: Colors.green,
-          primaryColor: const Color(0xFF4CAF50),
-          scaffoldBackgroundColor: const Color(0xFF1A1A2E),
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFF16213E),
-            foregroundColor: Colors.white,
-            elevation: 0,
-          ),
-          cardTheme: CardThemeData(
-            color: const Color(0xFF0F3460),
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          textTheme: const TextTheme(
-            bodyLarge: TextStyle(color: Colors.white),
-            bodyMedium: TextStyle(color: Colors.white),
-            titleLarge: TextStyle(color: Colors.white),
-            titleMedium: TextStyle(color: Colors.white),
-          ),
-          iconTheme: const IconThemeData(color: Colors.white),
-        ),
+        theme: themeProvider.currentTheme,
         home: const MainScreen(),
         routes: {
           '/home': (context) => const MainScreen(),
@@ -66,8 +53,13 @@ class TarteelApp extends StatelessWidget {
               surah: args['surah'] as Surah,
             );
           },
+          '/tafsir': (context) {
+            final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+            return TafsirScreen(surah: args['surah'] as Surah);
+          },
           '/reciter-selection': (context) => const ReciterSelectionScreen(),
           '/audio-settings': (context) => const AudioSettingsScreen(),
+          '/settings': (context) => const SettingsScreen(),
         },
         onGenerateRoute: (settings) {
           // معالجة الأخطاء في التنقل
@@ -79,9 +71,10 @@ class TarteelApp extends StatelessWidget {
           return null;
         },
       ),
-    );
+    ));
   }
-}
+  }
+// This closing brace should be removed as it's an extra closing brace
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -95,10 +88,10 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const Placeholder(), // شاشة التجويد
-    const Placeholder(), // شاشة التفسير
-    const Placeholder(), // شاشة الحفظ
-    const Placeholder(), // شاشة الإعدادات
+    const TajweedScreen(), // شاشة التجويد
+    const TafsirScreen(), // شاشة التفسير
+    const MemorizationScreen(), // شاشة الحفظ
+    const SettingsScreen(), // شاشة الإعدادات
   ];
 
   @override
@@ -125,9 +118,9 @@ class _MainScreenState extends State<MainScreen> {
         body: _screens[_currentIndex],
         bottomNavigationBar: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
-          backgroundColor: const Color(0xFF16213E),
-          selectedItemColor: const Color(0xFF4CAF50),
-          unselectedItemColor: Colors.grey,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          selectedItemColor: Theme.of(context).primaryColor,
+          unselectedItemColor: Theme.of(context).unselectedWidgetColor,
           currentIndex: _currentIndex,
           onTap: (index) {
             setState(() {

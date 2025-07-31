@@ -8,6 +8,7 @@ import 'tafsir_screen.dart';
 import 'memorization_screen.dart';
 import 'search_screen.dart';
 import 'statistics_screen.dart';
+import 'surah_selection_screen.dart'; // Import the new screen
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,7 +29,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
       body: SafeArea(
         child: Consumer<QuranProvider>(
           builder: (context, quranProvider, child) {
@@ -39,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   expandedHeight: 120,
                   floating: false,
                   pinned: true,
-                  backgroundColor: const Color(0xFF16213E),
+                  backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
                   flexibleSpace: FlexibleSpaceBar(
                     title: const Text(
                       'ترتيل',
@@ -50,16 +50,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       textDirection: TextDirection.rtl,
                     ),
+                    centerTitle: true,
                     background: Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Color(0xFF16213E),
-                            Color(0xFF0F3460),
-                          ],
-                        ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).appBarTheme.backgroundColor,
                       ),
                     ),
                   ),
@@ -86,6 +80,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       },
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.settings, color: Colors.white),
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/settings');
+                      },
+                    ),
                   ],
                 ),
 
@@ -94,12 +94,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Text(
+                        Text(
                           'الميزات الرئيسية',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Theme.of(context).textTheme.titleLarge?.color,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
@@ -120,23 +120,19 @@ class _HomeScreenState extends State<HomeScreen> {
                               icon: Icons.mic,
                               color: const Color(0xFF4CAF50),
                               onTap: () {
-                                // التنقل إلى شاشة السورة
-                                if (quranProvider.surahs.isNotEmpty) {
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/surah',
-                                    arguments: {
-                                      'surah': quranProvider.surahs.first,
-                                    },
-                                  );
-                                }
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const SurahSelectionScreen(),
+                                  ),
+                                );
                               },
                             ),
                             FeatureCard(
                               title: 'التجويد',
                               subtitle: 'تعلم قواعد التجويد',
-                              icon: Icons.book,
-                              color: const Color(0xFF2196F3),
+                              icon: Icons.mic,
+                              color: const Color(0xFF4CAF50),
                               onTap: () {
                                 Navigator.push(
                                   context,
@@ -186,12 +182,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Text(
+                        Text(
                           'آخر السور المقروءة',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Theme.of(context).textTheme.titleLarge?.color,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
@@ -247,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const Text(
                           'القرآن الكريم',
@@ -338,4 +334,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-} 
+}
