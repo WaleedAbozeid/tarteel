@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import '../providers/quran_provider.dart';
 import '../widgets/surah_card.dart';
 import '../widgets/feature_card.dart';
+import '../models/quran_models.dart';
 import 'tajweed_screen.dart';
+import 'surah_selection_screen.dart';
 import 'tafsir_screen.dart';
 import 'memorization_screen.dart';
 import 'search_screen.dart';
@@ -119,16 +121,21 @@ class _HomeScreenState extends State<HomeScreen> {
                               subtitle: 'تحسين التلاوة بالذكاء الاصطناعي',
                               icon: Icons.mic,
                               color: const Color(0xFF4CAF50),
-                              onTap: () {
-                                // التنقل إلى شاشة السورة
+                              onTap: () async {
                                 if (quranProvider.surahs.isNotEmpty) {
-                                  Navigator.pushNamed(
+                                  final selectedSurah = await Navigator.push(
                                     context,
-                                    '/surah',
-                                    arguments: {
-                                      'surah': quranProvider.surahs.first,
-                                    },
+                                    MaterialPageRoute(
+                                      builder: (context) => SurahSelectionScreen(surahs: quranProvider.surahs),
+                                    ),
                                   );
+                                  if (selectedSurah != null && selectedSurah is Surah) {
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/surah',
+                                      arguments: {'surah': selectedSurah},
+                                    );
+                                  }
                                 }
                               },
                             ),
