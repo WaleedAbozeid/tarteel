@@ -1,3 +1,9 @@
 {
-    "cmake.sourceDirectory": "D:/flutter/tarteel/linux"
+    "cmake.sourceDirectory": "D:/flutter/tarteel/linux",
+    "Codegeex.CompletionModel": "CodeGeeX Pro[Beta]",
+    "Codegeex.Chat.LanguagePreference": "English",
+    "Codegeex.Comment.LanguagePreference": "English",
+    "Codegeex.SidebarUI.LanguagePreference": "English",
+    "Codegeex.CommitMessage.LanguagePreference": "English",
+    "Codegeex.RepoIndex": true
 }

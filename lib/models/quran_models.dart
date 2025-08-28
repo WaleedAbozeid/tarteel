@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class Surah {
   final int number;
   final String name;
@@ -6,6 +8,8 @@ class Surah {
   final String revelationType;
   final int numberOfAyahs;
   final String description;
+  final int wordsCount;
+  final int lettersCount;
 
   Surah({
     required this.number,
@@ -15,16 +19,45 @@ class Surah {
     required this.revelationType,
     required this.numberOfAyahs,
     required this.description,
+    this.wordsCount = 0,
+    this.lettersCount = 0,
   });
 
   factory Surah.fromJson(Map<String, dynamic> json) {
+    print('Surah.fromJson: Starting to parse JSON');
+    
+    // Handle new JSON structure with nested objects
+    final Map<String, dynamic> name = json['name'] as Map<String, dynamic>? ?? {};
+    final Map<String, dynamic> revelationPlace = json['revelation_place'] as Map<String, dynamic>? ?? {};
+    
+    print('Surah.fromJson: name object = $name');
+    print('Surah.fromJson: revelation_place object = $revelationPlace');
+    
+    final surah = Surah(
+      number: json['number'] ?? 0,
+      name: name['en'] ?? name['transliteration'] ?? '',
+      nameAr: name['ar'] ?? '',
+      nameEn: name['en'] ?? name['transliteration'] ?? '',
+      revelationType: revelationPlace['en'] ?? '',
+      numberOfAyahs: json['verses_count'] ?? 0,
+      description: name['en'] ?? '',
+      wordsCount: json['words_count'] ?? 0,
+      lettersCount: json['letters_count'] ?? 0,
+    );
+    
+    print('Surah.fromJson: Created surah ${surah.number}: ${surah.nameAr} (${surah.nameEn})');
+    return surah;
+  }
+
+  // Factory method for old API structure (backward compatibility)
+  factory Surah.fromOldJson(Map<String, dynamic> json) {
     return Surah(
-      number: json['number'],
-      name: json['name'],
-      nameAr: json['nameAr'],
-      nameEn: json['nameEn'],
-      revelationType: json['revelationType'],
-      numberOfAyahs: json['numberOfAyahs'],
+      number: json['number'] ?? 0,
+      name: json['name'] ?? '',
+      nameAr: json['nameAr'] ?? '',
+      nameEn: json['nameEn'] ?? '',
+      revelationType: json['revelationType'] ?? '',
+      numberOfAyahs: json['numberOfAyahs'] ?? 0,
       description: json['description'] ?? '',
     );
   }
@@ -32,12 +65,18 @@ class Surah {
   Map<String, dynamic> toJson() {
     return {
       'number': number,
-      'name': name,
-      'nameAr': nameAr,
-      'nameEn': nameEn,
-      'revelationType': revelationType,
-      'numberOfAyahs': numberOfAyahs,
-      'description': description,
+      'name': {
+        'ar': nameAr,
+        'en': nameEn,
+        'transliteration': name,
+      },
+      'revelation_place': {
+        'ar': revelationType == 'Meccan' ? 'مكية' : 'مدنية',
+        'en': revelationType,
+      },
+      'verses_count': numberOfAyahs,
+      'words_count': wordsCount,
+      'letters_count': lettersCount,
     };
   }
 }
@@ -70,18 +109,38 @@ class Ayah {
   });
 
   factory Ayah.fromJson(Map<String, dynamic> json) {
+    // Handle new JSON structure with nested text object
+    final Map<String, dynamic> textObj = json['text'] as Map<String, dynamic>? ?? {};
+    
     return Ayah(
-      number: json['number'],
-      surahNumber: json['surahNumber'],
-      text: json['text'],
-      textAr: json['textAr'],
-      translation: json['translation'],
-      translationAr: json['translationAr'],
-      juz: json['juz'],
-      page: json['page'],
-      ruku: json['ruku'],
-      hizbQuarter: json['hizbQuarter'],
-      sajda: json['sajda'],
+      number: json['number'] ?? 0,
+      surahNumber: json['surahNumber'] ?? 0,
+      text: textObj['en']?.toString() ?? textObj['ar']?.toString() ?? '',
+      textAr: textObj['ar']?.toString() ?? '',
+      translation: textObj['en']?.toString() ?? '',
+      translationAr: '',
+      juz: json['juz'] ?? 0,
+      page: json['page'] ?? 0,
+      ruku: json['ruku'] ?? 0,
+      hizbQuarter: json['hizbQuarter'] ?? 0,
+      sajda: (json['sajda'] ?? false).toString(),
+    );
+  }
+
+  // Factory method for old API structure (backward compatibility)
+  factory Ayah.fromOldJson(Map<String, dynamic> json) {
+    return Ayah(
+      number: json['number'] ?? 0,
+      surahNumber: json['surahNumber'] ?? 0,
+      text: json['text'] ?? '',
+      textAr: json['textAr'] ?? '',
+      translation: json['translation'] ?? '',
+      translationAr: json['translationAr'] ?? '',
+      juz: json['juz'] ?? 0,
+      page: json['page'] ?? 0,
+      ruku: json['ruku'] ?? 0,
+      hizbQuarter: json['hizbQuarter'] ?? 0,
+      sajda: json['sajda'] ?? 'false',
     );
   }
 
@@ -89,15 +148,15 @@ class Ayah {
     return {
       'number': number,
       'surahNumber': surahNumber,
-      'text': text,
-      'textAr': textAr,
-      'translation': translation,
-      'translationAr': translationAr,
+      'text': {
+        'ar': textAr,
+        'en': translation,
+      },
       'juz': juz,
       'page': page,
       'ruku': ruku,
       'hizbQuarter': hizbQuarter,
-      'sajda': sajda,
+      'sajda': sajda == 'true',
     };
   }
 }
@@ -180,32 +239,144 @@ class Reciter {
 
 class TajweedRule {
   final String name;
+  final String arabicName;
   final String description;
-  final String color;
-  final String example;
+  final List<String> examples;
+  final String practiceText;
+  final String practiceInstructions;
 
   TajweedRule({
     required this.name,
+    required this.arabicName,
     required this.description,
-    required this.color,
-    required this.example,
+    required this.examples,
+    required this.practiceText,
+    required this.practiceInstructions,
   });
 
   factory TajweedRule.fromJson(Map<String, dynamic> json) {
     return TajweedRule(
       name: json['name'],
+      arabicName: json['arabicName'],
       description: json['description'],
-      color: json['color'],
-      example: json['example'],
+      examples: List<String>.from(json['examples'] ?? []),
+      practiceText: json['practiceText'] ?? '',
+      practiceInstructions: json['practiceInstructions'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'name': name,
+      'arabicName': arabicName,
       'description': description,
-      'color': color,
-      'example': example,
+      'examples': examples,
+      'practiceText': practiceText,
+      'practiceInstructions': practiceInstructions,
+    };
+  }
+}
+
+class TafsirSource {
+  final String name;
+  final String arabicName;
+  final String description;
+  final Color color;
+
+  TafsirSource({
+    required this.name,
+    required this.arabicName,
+    required this.description,
+    required this.color,
+  });
+
+  factory TafsirSource.fromJson(Map<String, dynamic> json) {
+    return TafsirSource(
+      name: json['name'],
+      arabicName: json['arabicName'],
+      description: json['description'],
+      color: Color(json['color']), // Assuming Color is a defined type
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'arabicName': arabicName,
+      'description': description,
+      'color': color.value, // Assuming Color has a value property
+    };
+  }
+}
+
+class TafsirText {
+  final int ayahNumber;
+  final String ayahText;
+  final String tafsirMuyassar;
+  final String tafsirIbnKathir;
+  final String tafsirTabari;
+  final String tafsirQurtubi;
+
+  TafsirText({
+    required this.ayahNumber,
+    required this.ayahText,
+    required this.tafsirMuyassar,
+    required this.tafsirIbnKathir,
+    required this.tafsirTabari,
+    required this.tafsirQurtubi,
+  });
+
+  factory TafsirText.fromJson(Map<String, dynamic> json) {
+    return TafsirText(
+      ayahNumber: json['ayahNumber'],
+      ayahText: json['ayahText'],
+      tafsirMuyassar: json['tafsirMuyassar'],
+      tafsirIbnKathir: json['tafsirIbnKathir'],
+      tafsirTabari: json['tafsirTabari'],
+      tafsirQurtubi: json['tafsirQurtubi'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ayahNumber': ayahNumber,
+      'ayahText': ayahText,
+      'tafsirMuyassar': tafsirMuyassar,
+      'tafsirIbnKathir': tafsirIbnKathir,
+      'tafsirTabari': tafsirTabari,
+      'tafsirQurtubi': tafsirQurtubi,
+    };
+  }
+}
+
+class MemorizationSurah {
+  final Surah surah;
+  final double progress;
+  final DateTime lastReviewed;
+  final String difficulty;
+
+  MemorizationSurah({
+    required this.surah,
+    required this.progress,
+    required this.lastReviewed,
+    required this.difficulty,
+  });
+
+  factory MemorizationSurah.fromJson(Map<String, dynamic> json) {
+    return MemorizationSurah(
+      surah: Surah.fromJson(json['surah']),
+      progress: json['progress'] as double,
+      lastReviewed: DateTime.parse(json['lastReviewed']),
+      difficulty: json['difficulty'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'surah': surah.toJson(),
+      'progress': progress,
+      'lastReviewed': lastReviewed.toIso8601String(),
+      'difficulty': difficulty,
     };
   }
 } 

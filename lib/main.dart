@@ -5,11 +5,24 @@ import 'providers/audio_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/recitation_screen.dart';
 import 'screens/surah_screen.dart';
+import 'screens/quran_list_screen.dart';
 import 'screens/reciter_selection_screen.dart';
 import 'screens/audio_settings_screen.dart';
+import 'screens/tajweed_screen.dart';
+import 'screens/tafsir_screen.dart';
+import 'screens/memorization_screen.dart';
+import 'screens/settings_screen.dart';
+import 'constants/app_colors.dart';
+import 'constants/app_strings.dart';
+import 'constants/app_sizes.dart';
 import 'models/quran_models.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  print('=== بدء تشغيل تطبيق ترتيل ===');
+  
+  // تحسين بدء التطبيق
   runApp(const TarteelApp());
 }
 
@@ -24,61 +37,85 @@ class TarteelApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AudioProvider()),
       ],
       child: MaterialApp(
-        title: 'ترتيل - تطبيق القرآن الذكي',
+        title: AppStrings.appTitle,
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primarySwatch: Colors.green,
-          primaryColor: const Color(0xFF4CAF50),
-          scaffoldBackgroundColor: const Color(0xFF1A1A2E),
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFF16213E),
-            foregroundColor: Colors.white,
-            elevation: 0,
-          ),
-          cardTheme: CardThemeData(
-            color: const Color(0xFF0F3460),
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          textTheme: const TextTheme(
-            bodyLarge: TextStyle(color: Colors.white),
-            bodyMedium: TextStyle(color: Colors.white),
-            titleLarge: TextStyle(color: Colors.white),
-            titleMedium: TextStyle(color: Colors.white),
-          ),
-          iconTheme: const IconThemeData(color: Colors.white),
-        ),
+        theme: _buildAppTheme(),
         home: const MainScreen(),
-        routes: {
-          '/home': (context) => const MainScreen(),
-          '/recitation': (context) {
-            final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-            return RecitationScreen(
-              surah: args['surah'] as Surah,
-              ayah: args['ayah'] as Ayah?,
-            );
-          },
-          '/surah': (context) {
-            final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-            return SurahScreen(
-              surah: args['surah'] as Surah,
-            );
-          },
-          '/reciter-selection': (context) => const ReciterSelectionScreen(),
-          '/audio-settings': (context) => const AudioSettingsScreen(),
-        },
-        onGenerateRoute: (settings) {
-          // معالجة الأخطاء في التنقل
-          if (settings.name == '/recitation' || settings.name == '/surah') {
-            return MaterialPageRoute(
-              builder: (context) => const MainScreen(),
-            );
-          }
-          return null;
+        routes: _buildAppRoutes(),
+        onGenerateRoute: _handleUnknownRoutes,
+        // تحسين الأداء
+        builder: (context, child) {
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+            child: child!,
+          );
         },
       ),
+    );
+  }
+
+  ThemeData _buildAppTheme() {
+    return ThemeData(
+      primarySwatch: Colors.green,
+      primaryColor: AppColors.primary,
+      scaffoldBackgroundColor: AppColors.background,
+      appBarTheme: AppBarTheme(
+        backgroundColor: AppColors.cardBackground,
+        foregroundColor: AppColors.textPrimary,
+        elevation: AppSizes.appBarElevation,
+      ),
+      cardTheme: CardThemeData(
+        color: AppColors.surface,
+        elevation: AppSizes.cardElevation,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.cardRadius),
+        ),
+      ),
+      textTheme: const TextTheme(
+        bodyLarge: TextStyle(color: AppColors.textPrimary),
+        bodyMedium: TextStyle(color: AppColors.textPrimary),
+        titleLarge: TextStyle(color: AppColors.textPrimary),
+        titleMedium: TextStyle(color: AppColors.textPrimary),
+      ),
+      iconTheme: const IconThemeData(color: AppColors.textPrimary),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
+    );
+  }
+
+  Map<String, WidgetBuilder> _buildAppRoutes() {
+    return {
+      '/home': (context) => const MainScreen(),
+      '/quran-list': (context) => const QuranListScreen(),
+      '/reciter-selection': (context) => const ReciterSelectionScreen(),
+      '/audio-settings': (context) => const AudioSettingsScreen(),
+      '/tajweed': (context) => const TajweedScreen(),
+      '/tafsir': (context) => const TafsirScreen(),
+      '/memorization': (context) => const MemorizationScreen(),
+      '/settings': (context) => const SettingsScreen(),
+      '/surah': (context) {
+        final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+        return SurahScreen(surah: args['surah'] as Surah);
+      },
+      '/recitation': (context) {
+        final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+        return RecitationScreen(
+          surah: args['surah'] as Surah,
+          ayah: args['ayah'] as Ayah?,
+        );
+      },
+    };
+  }
+
+  Route<dynamic>? _handleUnknownRoutes(RouteSettings settings) {
+    debugPrint('Unknown route: ${settings.name}');
+    // إرجاع الشاشة الرئيسية للمسارات غير المعروفة
+    return MaterialPageRoute(
+      builder: (context) => const MainScreen(),
     );
   }
 }
@@ -90,73 +127,131 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   int _currentIndex = 0;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const Placeholder(), // شاشة التجويد
-    const Placeholder(), // شاشة التفسير
-    const Placeholder(), // شاشة الحفظ
-    const Placeholder(), // شاشة الإعدادات
+    const TajweedScreen(),
+    const TafsirScreen(),
+    const MemorizationScreen(),
+    const SettingsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeAnimations();
+  }
+
+  void _initializeAnimations() {
+    _animationController = AnimationController(
+      duration: AppSizes.animationNormal,
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _onTabTapped(int index) {
+    if (index != _currentIndex) {
+      setState(() {
+        _currentIndex = index;
+      });
+      _restartAnimation();
+    }
+  }
+
+  void _restartAnimation() {
+    _animationController.reset();
+    _animationController.forward();
+  }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async {
-        try {
-          // إذا كان المستخدم في الشاشة الرئيسية، اخرج من التطبيق
-          // وإلا ارجع للشاشة الرئيسية
-          if (_currentIndex == 0) {
-            return true; // السماح بالخروج من التطبيق
-          } else {
-            setState(() {
-              _currentIndex = 0;
-            });
-            return false; // منع الخروج من التطبيق
-          }
-        } catch (e) {
-          // في حالة حدوث خطأ، اخرج من التطبيق
-          return true;
-        }
-      },
+      onWillPop: _handleBackPress,
       child: Scaffold(
-        body: _screens[_currentIndex],
-        bottomNavigationBar: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: const Color(0xFF16213E),
-          selectedItemColor: const Color(0xFF4CAF50),
-          unselectedItemColor: Colors.grey,
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'الرئيسية',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.book),
-              label: 'التجويد',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.lightbulb),
-              label: 'التفسير',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.school),
-              label: 'الحفظ',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings),
-              label: 'الإعدادات',
-            ),
-          ],
+        body: FadeTransition(
+          opacity: _fadeAnimation,
+          child: _screens[_currentIndex],
         ),
+        bottomNavigationBar: _buildBottomNavigationBar(),
+      ),
+    );
+  }
+
+  Future<bool> _handleBackPress() async {
+    try {
+      if (_currentIndex == 0) {
+        return true;
+      } else {
+        setState(() {
+          _currentIndex = 0;
+        });
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Back navigation error: $e');
+      return true;
+    }
+  }
+
+  Widget _buildBottomNavigationBar() {
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.overlay,
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: AppColors.cardBackground,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textSecondary,
+        currentIndex: _currentIndex,
+        onTap: _onTabTapped,
+        elevation: AppSizes.bottomNavElevation,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: AppStrings.home,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.book),
+            label: AppStrings.tajweed,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.lightbulb),
+            label: AppStrings.tafsir,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.school),
+            label: AppStrings.memorization,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: AppStrings.settings,
+          ),
+        ],
       ),
     );
   }

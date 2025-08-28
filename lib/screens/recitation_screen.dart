@@ -26,7 +26,9 @@ class _RecitationScreenState extends State<RecitationScreen> {
   @override
   void initState() {
     super.initState();
+    print('RecitationScreen: Initializing for surah ${widget.surah.number}');
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('RecitationScreen: Loading ayahs for surah ${widget.surah.number}');
       context.read<QuranProvider>().loadSurahAyahs(widget.surah.number);
       if (widget.ayah != null) {
         _currentAyahIndex = widget.ayah!.number - 1;
@@ -87,10 +89,43 @@ class _RecitationScreenState extends State<RecitationScreen> {
             }
 
             if (quranProvider.currentSurahAyahs.isEmpty) {
-              return const Center(
-                child: Text(
-                  'لا توجد آيات متاحة',
-                  style: TextStyle(color: Colors.white),
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.grey,
+                      size: 64,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'لا توجد آيات متاحة',
+                      style: const TextStyle(color: Colors.white, fontSize: 18),
+                      textDirection: TextDirection.rtl,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'السورة: ${widget.surah.nameAr} (${widget.surah.number})',
+                      style: const TextStyle(color: Colors.grey, fontSize: 14),
+                      textDirection: TextDirection.rtl,
+                    ),
+                    if (quranProvider.error != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'الخطأ: ${quranProvider.error}',
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                        textDirection: TextDirection.rtl,
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<QuranProvider>().loadSurahAyahs(widget.surah.number);
+                      },
+                      child: const Text('إعادة المحاولة'),
+                    ),
+                  ],
                 ),
               );
             }

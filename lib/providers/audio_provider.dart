@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'dart:async';
 import '../models/quran_models.dart';
 
 class AudioProvider extends ChangeNotifier {
@@ -41,6 +42,10 @@ class AudioProvider extends ChangeNotifier {
   bool _highQualityMode = false;
   bool _autoPlayNext = true;
   bool _rememberPosition = true;
+  
+  // Stream لمراقبة اكتمال الصوت
+  final StreamController<void> _audioCompleteController = StreamController<void>.broadcast();
+  Stream<void> get onAudioComplete => _audioCompleteController.stream;
   
   // Getters
   bool get isPlaying => _isPlaying;
@@ -131,6 +136,8 @@ class AudioProvider extends ChangeNotifier {
         _isPlaying = false;
         _isPaused = false;
         _isLoading = false;
+        // استدعاء معالجة اكتمال التشغيل
+        _handlePlaybackComplete();
         break;
       default:
         _isLoading = false;
@@ -154,6 +161,9 @@ class AudioProvider extends ChangeNotifier {
     } else if (_isLoopMode) {
       _restartCurrentAudio();
     }
+    
+    // إشعار stream باكتمال الصوت
+    _audioCompleteController.add(null);
   }
 
   // إعادة تشغيل الصوت الحالي
@@ -199,15 +209,19 @@ class AudioProvider extends ChangeNotifier {
     int? ayahNumber,
   }) async {
     try {
+      print('بدء تشغيل الصوت: $audioUrl'); // للتأكد من الرابط
+      
       // التحقق من صحة الرابط
       if (audioUrl.isEmpty) {
         _recordingError = 'رابط الصوت غير متاح';
+        print('خطأ: رابط الصوت فارغ');
         notifyListeners();
         return;
       }
 
       // إيقاف التشغيل الحالي إذا كان مختلفاً
       if (_currentAudioUrl != audioUrl) {
+        print('إيقاف التشغيل السابق');
         await _stopCurrentAudio();
         _currentAudioUrl = audioUrl;
         _currentReciterId = reciterId ?? '';
@@ -215,12 +229,15 @@ class AudioProvider extends ChangeNotifier {
         _currentAyahNumber = ayahNumber ?? 0;
       }
 
+      print('تعيين مصدر الصوت...');
       // تعيين مصدر الصوت
       await _audioPlayer.setSourceUrl(audioUrl);
       
+      print('تطبيق إعدادات الصوت...');
       // تطبيق الإعدادات
       await _applyAudioSettings();
       
+      print('بدء التشغيل...');
       // بدء التشغيل
       await _audioPlayer.resume();
       
@@ -228,9 +245,11 @@ class AudioProvider extends ChangeNotifier {
       _isPaused = false;
       _isLoading = false;
       _recordingError = '';
+      print('تم تشغيل الصوت بنجاح');
       notifyListeners();
 
     } catch (e) {
+      print('خطأ في تشغيل الصوت: $e');
       _recordingError = 'خطأ في تشغيل الصوت: $e';
       _isPlaying = false;
       _isPaused = false;
@@ -526,6 +545,7 @@ class AudioProvider extends ChangeNotifier {
     try {
       cleanup();
       _audioPlayer.dispose();
+      _audioCompleteController.close();
     } catch (e) {
       // تجاهل الأخطاء عند التخلص من الموارد
     }

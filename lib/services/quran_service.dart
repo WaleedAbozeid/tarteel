@@ -362,14 +362,57 @@ class QuranService {
   static String getHighQualityAudioUrl(String reciterId, int surahNumber, int ayahNumber) {
     String surahStr = surahNumber.toString().padLeft(3, '0');
     String ayahStr = ayahNumber.toString().padLeft(3, '0');
-    return 'https://verses.quran.com/$reciterId/mp3/$surahStr$ayahStr.mp3';
+    
+    // روابط بديلة أكثر موثوقية
+    switch (reciterId) {
+      case 'mishary_rashid_alafasy':
+        return 'https://server8.mp3quran.net/afs/$surahStr$ayahStr.mp3';
+      
+      case 'abdul_basit_abdul_samad':
+        return 'https://server8.mp3quran.net/abdul_basit_mujawwad/$surahStr$ayahStr.mp3';
+      
+      case 'sudais_shuraim':
+        return 'https://server8.mp3quran.net/sudais/$surahStr$ayahStr.mp3';
+      
+      default:
+        return 'https://server8.mp3quran.net/afs/$surahStr$ayahStr.mp3';
+    }
   }
 
   // الحصول على رابط الصوت من خدمة بديلة
   static String getAlternativeAudioUrl(String reciterId, int surahNumber, int ayahNumber) {
     String surahStr = surahNumber.toString().padLeft(3, '0');
     String ayahStr = ayahNumber.toString().padLeft(3, '0');
-    return 'https://verses.quran.com/AbdulBaset/Mujawwad/mp3/$surahStr$ayahStr.mp3';
+    
+    // روابط بديلة من mp3quran.net
+    return 'https://server8.mp3quran.net/afs/$surahStr$ayahStr.mp3';
+  }
+
+  // الحصول على رابط صوتي محلي للاختبار
+  static String getLocalTestAudioUrl(int surahNumber, int ayahNumber) {
+    // رابط صوتي محلي للاختبار - يمكن استبداله برابط حقيقي
+    return 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav';
+  }
+
+  // الحصول على رابط صوتي من مصدر موثوق
+  static String getReliableAudioUrl(String reciterId, int surahNumber, int ayahNumber) {
+    String surahStr = surahNumber.toString().padLeft(3, '0');
+    String ayahStr = ayahNumber.toString().padLeft(3, '0');
+    
+    // روابط من مصادر موثوقة
+    switch (reciterId) {
+      case 'mishary_rashid_alafasy':
+        return 'https://server8.mp3quran.net/afs/$surahStr$ayahStr.mp3';
+      
+      case 'abdul_basit_abdul_samad':
+        return 'https://server8.mp3quran.net/abdul_basit_mujawwad/$surahStr$ayahStr.mp3';
+      
+      case 'sudais_shuraim':
+        return 'https://server8.mp3quran.net/sudais/$surahStr$ayahStr.mp3';
+      
+      default:
+        return 'https://server8.mp3quran.net/afs/$surahStr$ayahStr.mp3';
+    }
   }
 
   // الحصول على قواعد التجويد
@@ -377,33 +420,43 @@ class QuranService {
     return [
       TajweedRule(
         name: 'الغنة',
+        arabicName: 'الغنة',
         description: 'صوت يخرج من الخيشوم مع النون والميم',
-        color: '#4CAF50',
-        example: 'مِنْ نُّطْفَةٍ',
+        examples: ['مِنْ نُّطْفَةٍ', 'نَعَمْ', 'إِنَّ', 'أَمَّا'],
+        practiceText: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+        practiceInstructions: 'ركز على النطق الصحيح لحرفي النون والميم مع الغنة',
       ),
       TajweedRule(
         name: 'المد',
+        arabicName: 'المد',
         description: 'إطالة الصوت في الحروف المدية',
-        color: '#FF9800',
-        example: 'الرَّحْمَٰنِ',
+        examples: ['الرَّحْمَٰنِ', 'الرَّحِيمِ', 'اللَّهُ'],
+        practiceText: 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ',
+        practiceInstructions: 'أطِل الصوت عند النطق بالحروف المدية',
       ),
       TajweedRule(
         name: 'الإدغام',
+        arabicName: 'الإدغام',
         description: 'دمج حرف ساكن في حرف متحرك',
-        color: '#2196F3',
-        example: 'مِن نَّفْسٍ',
+        examples: ['مِن نَّفْسٍ', 'عَلَىٰ نَّفْسِهِ', 'مِن مَّاءٍ'],
+        practiceText: 'مِنْ نَفْسٍ وَمِنْ مَاءٍ مَّهِينٍ',
+        practiceInstructions: 'دمج الحروف الساكنة مع الحروف المتحركة',
       ),
       TajweedRule(
         name: 'القلقلة',
+        arabicName: 'القلقلة',
         description: 'اهتزاز الصوت في الحروف القلقلة',
-        color: '#9C27B0',
-        example: 'قُلْ هُوَ اللَّهُ',
+        examples: ['قُلْ هُوَ اللَّهُ', 'طَهَ', 'بِسْمِ', 'جَعَلَ', 'دَعَا'],
+        practiceText: 'قُلْ هُوَ اللَّهُ أَحَدٌ',
+        practiceInstructions: 'اهتز الصوت عند النطق بحروف القلقلة',
       ),
       TajweedRule(
         name: 'الإخفاء',
+        arabicName: 'الإخفاء',
         description: 'إخفاء النون والميم عند بعض الحروف',
-        color: '#607D8B',
-        example: 'مِن فَضْلِهِ',
+        examples: ['مِن فَضْلِهِ', 'مِن كُلِّ', 'مِن شَيْءٍ'],
+        practiceText: 'مِنْ فَضْلِهِ وَمِنْ كُلِّ شَيْءٍ',
+        practiceInstructions: 'أخفِ حرف النون عند النطق به',
       ),
     ];
   }

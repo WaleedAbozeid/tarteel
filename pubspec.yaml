@@ -90,7 +90,10 @@ flutter:
     - assets/audio/
     - assets/fonts/
     - assets/data/
-
+    - assets/data/json/
+    - assets/data/json/surah/
+    - assets/data/qur1/
+    
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

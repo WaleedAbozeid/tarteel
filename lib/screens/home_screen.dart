@@ -24,7 +24,25 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<QuranProvider>().loadSurahsOptimized();
+      // اختبار الانتقال بعد تحميل البيانات
+      _testNavigation();
     });
+  }
+
+  // دالة اختبار الانتقال
+  void _testNavigation() {
+    print('=== اختبار الانتقال ===');
+    final quranProvider = context.read<QuranProvider>();
+    print('1. عدد السور المحملة: ${quranProvider.surahs.length}');
+    
+    if (quranProvider.surahs.isNotEmpty) {
+      print('2. أول سورة: ${quranProvider.surahs[0].nameAr}');
+      print('3. الانتقال إلى التلاوة الذكية متاح');
+    } else {
+      print('2. لا توجد سور محملة');
+      print('3. الانتقال إلى التلاوة الذكية غير متاح');
+    }
+    print('=== انتهى اختبار الانتقال ===');
   }
 
   @override
@@ -117,6 +135,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           childAspectRatio: 1.2,
                           children: [
                             FeatureCard(
+                              title: 'عرض القرآن',
+                              subtitle: 'تصفح القرآن الكريم',
+                              icon: Icons.menu_book,
+                              color: const Color(0xFFE91E63),
+                              onTap: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/quran-list',
+                                );
+                              },
+                            ),
+                            FeatureCard(
                               title: 'التلاوة الذكية',
                               subtitle: 'تحسين التلاوة بالذكاء الاصطناعي',
                               icon: Icons.mic,
@@ -132,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   if (selectedSurah != null && selectedSurah is Surah) {
                                     Navigator.pushNamed(
                                       context,
-                                      '/surah',
+                                      '/recitation',
                                       arguments: {'surah': selectedSurah},
                                     );
                                   }
@@ -177,6 +207,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => const MemorizationScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            FeatureCard(
+                              title: 'البحث',
+                              subtitle: 'البحث في القرآن الكريم',
+                              icon: Icons.search,
+                              color: const Color(0xFF607D8B),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const SearchScreen(),
                                   ),
                                 );
                               },
