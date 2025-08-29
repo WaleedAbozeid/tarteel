@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/quran_models.dart';
+import '../providers/progress_provider.dart';
+import '../providers/quran_provider.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -122,24 +125,39 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildStatisticsCards() {
+    final progressProvider = Provider.of<ProgressProvider>(context);
+    final quranProvider = Provider.of<QuranProvider>(context);
+    
+    // حساب إجمالي الآيات المحفوظة
+    int totalMemorizedAyahs = 0;
+    int totalAyahs = 0;
+    
+    for (final surah in quranProvider.surahs) {
+      final surahId = surah.number.toString();
+      final memorizedCount = progressProvider.getMemorizedAyahsCount(surahId);
+      totalMemorizedAyahs += memorizedCount;
+      totalAyahs += surah.numberOfAyahs;
+
+    }
+    
     return Column(
       children: [
         Row(
           children: [
             Expanded(
               child: _buildStatCard(
-                'الوقت المستغرق',
-                '2:45:30',
-                Icons.timer,
+                'أيام التتابع',
+                '${progressProvider.streakCount}',
+                Icons.calendar_today,
                 const Color(0xFF4CAF50),
-                'ساعات',
+                'يوم',
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _buildStatCard(
-                'الآيات المقروءة',
-                '156',
+                'الآيات المحفوظة',
+                '$totalMemorizedAyahs',
                 Icons.text_fields,
                 const Color(0xFF2196F3),
                 'آية',
@@ -147,7 +165,56 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ),
           ],
         ),
+        
         const SizedBox(height: 12),
+        
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                'السور المقروءة',
+                '${progressProvider.readSurahs.length}',
+                Icons.book,
+                const Color(0xFFFF9800),
+                'سورة',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                'الهدف اليومي',
+                '${progressProvider.todayReadPages}/${progressProvider.dailyGoalPages}',
+                Icons.insert_chart,
+                const Color(0xFF9C27B0),
+                'صفحة',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        
+        // شريط تقدم الهدف اليومي
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'تقدم الهدف اليومي: ${(progressProvider.dailyGoalProgress * 100).toStringAsFixed(1)}%',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: progressProvider.dailyGoalProgress.clamp(0.0, 1.0),
+              backgroundColor: Colors.grey[800],
+              valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+              minHeight: 8,
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 24),
         Row(
           children: [
             Expanded(
@@ -549,4 +616,4 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       ),
     );
   }
-} 
+}

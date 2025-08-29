@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/quran_provider.dart';
-import 'providers/audio_provider.dart';
+import 'providers/audio_provider.dart' as Provider;
+import 'providers/theme_provider.dart';
+import 'providers/progress_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/recitation_screen.dart';
 import 'screens/surah_screen.dart';
@@ -16,11 +18,14 @@ import 'constants/app_colors.dart';
 import 'constants/app_strings.dart';
 import 'constants/app_sizes.dart';
 import 'models/quran_models.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  print('=== بدء تشغيل تطبيق ترتيل ===');
+  if (kDebugMode) {
+    debugPrint('=== بدء تشغيل تطبيق ترتيل ===');
+  }
   
   // تحسين بدء التطبيق
   runApp(const TarteelApp());
@@ -34,55 +39,27 @@ class TarteelApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => QuranProvider()),
-        ChangeNotifierProvider(create: (_) => AudioProvider()),
+        ChangeNotifierProvider(create: (_) => Provider.AudioProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => ProgressProvider()),
       ],
-      child: MaterialApp(
-        title: AppStrings.appTitle,
-        debugShowCheckedModeBanner: false,
-        theme: _buildAppTheme(),
-        home: const MainScreen(),
-        routes: _buildAppRoutes(),
-        onGenerateRoute: _handleUnknownRoutes,
-        // تحسين الأداء
-        builder: (context, child) {
-          return MediaQuery(
-            data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
-            child: child!,
-          );
-        },
-      ),
-    );
-  }
-
-  ThemeData _buildAppTheme() {
-    return ThemeData(
-      primarySwatch: Colors.green,
-      primaryColor: AppColors.primary,
-      scaffoldBackgroundColor: AppColors.background,
-      appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.cardBackground,
-        foregroundColor: AppColors.textPrimary,
-        elevation: AppSizes.appBarElevation,
-      ),
-      cardTheme: CardThemeData(
-        color: AppColors.surface,
-        elevation: AppSizes.cardElevation,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSizes.cardRadius),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) => MaterialApp(
+          title: AppStrings.appTitle,
+          debugShowCheckedModeBanner: false,
+          theme: themeProvider.currentTheme,
+          home: const MainScreen(),
+          routes: _buildAppRoutes(),
+          onGenerateRoute: _handleUnknownRoutes,
+          builder: (context, child) {
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: TextScaler.noScaling,
+              ),
+              child: child!,
+            );
+          },
         ),
-      ),
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: AppColors.textPrimary),
-        bodyMedium: TextStyle(color: AppColors.textPrimary),
-        titleLarge: TextStyle(color: AppColors.textPrimary),
-        titleMedium: TextStyle(color: AppColors.textPrimary),
-      ),
-      iconTheme: const IconThemeData(color: AppColors.textPrimary),
-      pageTransitionsTheme: const PageTransitionsTheme(
-        builders: {
-          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-        },
       ),
     );
   }
@@ -112,7 +89,9 @@ class TarteelApp extends StatelessWidget {
   }
 
   Route<dynamic>? _handleUnknownRoutes(RouteSettings settings) {
-    debugPrint('Unknown route: ${settings.name}');
+    if (kDebugMode) {
+      debugPrint('Unknown route: ${settings.name}');
+    }
     // إرجاع الشاشة الرئيسية للمسارات غير المعروفة
     return MaterialPageRoute(
       builder: (context) => const MainScreen(),
@@ -183,8 +162,24 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _handleBackPress,
+    return PopScope(
+      canPop: true,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+        try {
+          if (_currentIndex == 0) {
+            return;
+          } else {
+            setState(() {
+              _currentIndex = 0;
+            });
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('Back navigation error: $e');
+          }
+        }
+      },
       child: Scaffold(
         body: FadeTransition(
           opacity: _fadeAnimation,
@@ -193,22 +188,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         bottomNavigationBar: _buildBottomNavigationBar(),
       ),
     );
-  }
-
-  Future<bool> _handleBackPress() async {
-    try {
-      if (_currentIndex == 0) {
-        return true;
-      } else {
-        setState(() {
-          _currentIndex = 0;
-        });
-        return false;
-      }
-    } catch (e) {
-      debugPrint('Back navigation error: $e');
-      return true;
-    }
   }
 
   Widget _buildBottomNavigationBar() {

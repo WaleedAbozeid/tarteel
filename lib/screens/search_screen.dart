@@ -15,7 +15,13 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _isSearching = false;
   String _selectedFilter = 'الكل';
 
-  final List<String> _filters = ['الكل', 'السور', 'الآيات', 'الكلمات'];
+  final List<String> _filters = ['الكل', 'السور', 'الآيات', 'الكلمات', 'التفسير', 'التجويد'];
+  bool _showAdvancedSearch = false;
+  RangeValues _juzRange = const RangeValues(1, 30);
+  bool _searchInTafsir = false;
+  bool _searchInTajweed = false;
+  String _selectedRecitationQuality = 'الكل';
+  final List<String> _recitationQualities = ['الكل', 'ممتاز', 'جيد جداً', 'جيد', 'مقبول'];
 
   // بيانات وهمية للبحث
   final List<SearchResult> _allData = [
@@ -134,21 +140,33 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'البحث في القرآن',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).appBarTheme.titleTextStyle?.color),
         ),
-        backgroundColor: const Color(0xFF16213E),
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        iconTheme: IconThemeData(color: Theme.of(context).appBarTheme.iconTheme?.color),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).appBarTheme.iconTheme?.color),
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.mic, color: Colors.white),
+            icon: Icon(
+              _showAdvancedSearch ? Icons.expand_less : Icons.expand_more, 
+              color: Theme.of(context).appBarTheme.iconTheme?.color,
+            ),
+            onPressed: () {
+              setState(() {
+                _showAdvancedSearch = !_showAdvancedSearch;
+              });
+            },
+            tooltip: 'بحث متقدم',
+          ),
+          IconButton(
+            icon: Icon(Icons.mic, color: Theme.of(context).appBarTheme.iconTheme?.color),
             onPressed: () {
               _showVoiceSearchDialog();
             },
@@ -165,21 +183,21 @@ class _SearchScreenState extends State<SearchScreen> {
                 // حقل البحث
                 TextField(
                   controller: _searchController,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
                   decoration: InputDecoration(
                     hintText: 'ابحث في القرآن الكريم...',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                    hintStyle: TextStyle(color: Theme.of(context).hintColor),
+                    prefixIcon: Icon(Icons.search, color: Theme.of(context).iconTheme.color?.withOpacity(0.7)),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, color: Colors.grey),
+                            icon: Icon(Icons.clear, color: Theme.of(context).iconTheme.color?.withOpacity(0.7)),
                             onPressed: () {
                               _searchController.clear();
                             },
                           )
                         : null,
                     filled: true,
-                    fillColor: const Color(0xFF0F3460),
+                    fillColor: Theme.of(context).cardTheme.color,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -213,19 +231,21 @@ class _SearchScreenState extends State<SearchScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
                             color: isSelected 
-                                ? const Color(0xFF4CAF50) 
-                                : const Color(0xFF0F3460),
+                                ? Theme.of(context).primaryColor 
+                                : Theme.of(context).cardTheme.color,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: isSelected 
-                                  ? const Color(0xFF4CAF50)
-                                  : Colors.grey.withOpacity(0.3),
+                                  ? Theme.of(context).primaryColor
+                                  : Theme.of(context).dividerColor,
                             ),
                           ),
                           child: Text(
                             filter,
                             style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.grey,
+                              color: isSelected 
+                                  ? Theme.of(context).colorScheme.onPrimary 
+                                  : Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                             ),
                             textDirection: TextDirection.rtl,
@@ -236,6 +256,125 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 ),
               ],
+            ),
+          ),
+          
+          // واجهة البحث المتقدم
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            height: _showAdvancedSearch ? 220 : 0,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // نطاق البحث في الأجزاء
+                    Text(
+                      'نطاق الأجزاء: ${_juzRange.start.round()} - ${_juzRange.end.round()}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).textTheme.titleMedium?.color,
+                      ),
+                    ),
+                    RangeSlider(
+                      values: _juzRange,
+                      min: 1,
+                      max: 30,
+                      divisions: 29,
+                      labels: RangeLabels(
+                        _juzRange.start.round().toString(),
+                        _juzRange.end.round().toString(),
+                      ),
+                      onChanged: (values) {
+                        setState(() {
+                          _juzRange = values;
+                        });
+                      },
+                      activeColor: Theme.of(context).primaryColor,
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // خيارات إضافية
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CheckboxListTile(
+                            title: Text(
+                              'البحث في التفسير', 
+                              style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+                            ),
+                            value: _searchInTafsir,
+                            onChanged: (value) {
+                              setState(() {
+                                _searchInTafsir = value ?? false;
+                              });
+                            },
+                            activeColor: Theme.of(context).primaryColor,
+                            checkColor: Theme.of(context).colorScheme.onPrimary,
+                            controlAffinity: ListTileControlAffinity.leading,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                        Expanded(
+                          child: CheckboxListTile(
+                            title: Text(
+                              'البحث في التجويد', 
+                              style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+                            ),
+                            value: _searchInTajweed,
+                            onChanged: (value) {
+                              setState(() {
+                                _searchInTajweed = value ?? false;
+                              });
+                            },
+                            activeColor: Theme.of(context).primaryColor,
+                            checkColor: Theme.of(context).colorScheme.onPrimary,
+                            controlAffinity: ListTileControlAffinity.leading,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // جودة القراءة
+                    Text(
+                      'جودة القراءة:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).textTheme.titleMedium?.color,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: _recitationQualities.map((quality) {
+                        return ChoiceChip(
+                          label: Text(quality),
+                          selected: _selectedRecitationQuality == quality,
+                          onSelected: (selected) {
+                            if (selected) {
+                              setState(() {
+                                _selectedRecitationQuality = quality;
+                              });
+                            }
+                          },
+                          selectedColor: Theme.of(context).primaryColor,
+                          backgroundColor: Theme.of(context).cardTheme.color,
+                          labelStyle: TextStyle(
+                            color: _selectedRecitationQuality == quality 
+                                ? Theme.of(context).colorScheme.onPrimary 
+                                : Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
 
@@ -264,23 +403,23 @@ class _SearchScreenState extends State<SearchScreen> {
           Icon(
             Icons.search,
             size: 64,
-            color: Colors.grey.withOpacity(0.5),
+            color: Theme.of(context).iconTheme.color?.withOpacity(0.5),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'ابحث في القرآن الكريم',
             style: TextStyle(
-              color: Colors.white,
+              color: Theme.of(context).textTheme.titleLarge?.color,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
             textDirection: TextDirection.rtl,
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'اكتب كلمة أو آية للبحث',
             style: TextStyle(
-              color: Colors.grey,
+              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
               fontSize: 14,
             ),
             textDirection: TextDirection.rtl,
@@ -292,10 +431,10 @@ class _SearchScreenState extends State<SearchScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Column(
               children: [
-                const Text(
+                Text(
                   'اقتراحات سريعة:',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Theme.of(context).textTheme.titleMedium?.color,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -328,14 +467,14 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: const Color(0xFF0F3460),
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.withOpacity(0.3)),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Text(
           suggestion,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyMedium?.color,
             fontSize: 14,
           ),
           textDirection: TextDirection.rtl,
@@ -352,23 +491,23 @@ class _SearchScreenState extends State<SearchScreen> {
           Icon(
             Icons.search_off,
             size: 64,
-            color: Colors.grey.withOpacity(0.5),
+            color: Theme.of(context).iconTheme.color?.withOpacity(0.5),
           ),
           const SizedBox(height: 16),
           Text(
             'لا توجد نتائج لـ "$_searchQuery"',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: Theme.of(context).textTheme.titleLarge?.color,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
             textDirection: TextDirection.rtl,
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'جرب كلمات أخرى أو تحقق من الإملاء',
             style: TextStyle(
-              color: Colors.grey,
+              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
               fontSize: 14,
             ),
             textDirection: TextDirection.rtl,
@@ -393,7 +532,7 @@ class _SearchScreenState extends State<SearchScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F3460),
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: _getTypeColor(result.type).withOpacity(0.3),
@@ -404,14 +543,14 @@ class _SearchScreenState extends State<SearchScreen> {
           backgroundColor: _getTypeColor(result.type),
           child: Icon(
             _getTypeIcon(result.type),
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onPrimary,
             size: 20,
           ),
         ),
         title: Text(
           result.title,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: Theme.of(context).textTheme.titleMedium?.color,
             fontWeight: FontWeight.bold,
           ),
           textDirection: TextDirection.rtl,
@@ -422,8 +561,8 @@ class _SearchScreenState extends State<SearchScreen> {
             const SizedBox(height: 4),
             Text(
               result.subtitle,
-              style: const TextStyle(
-                color: Colors.grey,
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                 fontSize: 14,
               ),
               textDirection: TextDirection.rtl,
@@ -432,13 +571,13 @@ class _SearchScreenState extends State<SearchScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF16213E),
+                color: Theme.of(context).scaffoldBackgroundColor,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 result.content,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                   fontSize: 12,
                   fontFamily: 'Amiri',
                 ),
@@ -450,7 +589,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ],
         ),
         trailing: PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert, color: Colors.white),
+          icon: Icon(Icons.more_vert, color: Theme.of(context).iconTheme.color),
           onSelected: (value) {
             switch (value) {
               case 'view':
@@ -465,17 +604,26 @@ class _SearchScreenState extends State<SearchScreen> {
             }
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'view',
-              child: Text('عرض'),
+              child: Text(
+                'عرض',
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+              ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'play',
-              child: Text('تشغيل'),
+              child: Text(
+                'تشغيل',
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+              ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'share',
-              child: Text('مشاركة'),
+              child: Text(
+                'مشاركة',
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+              ),
             ),
           ],
         ),
@@ -489,13 +637,17 @@ class _SearchScreenState extends State<SearchScreen> {
   Color _getTypeColor(String type) {
     switch (type) {
       case 'سورة':
-        return const Color(0xFF4CAF50);
+        return Theme.of(context).primaryColor;
       case 'آية':
-        return const Color(0xFF2196F3);
+        return Theme.of(context).colorScheme.secondary;
       case 'كلمة':
-        return const Color(0xFFFF9800);
+        return Theme.of(context).colorScheme.tertiary;
+      case 'التفسير':
+        return Theme.of(context).colorScheme.primary;
+      case 'التجويد':
+        return Theme.of(context).colorScheme.secondary;
       default:
-        return const Color(0xFF4CAF50);
+        return Theme.of(context).primaryColor;
     }
   }
 
@@ -519,7 +671,7 @@ class _SearchScreenState extends State<SearchScreen> {
           'عرض: ${result.title}',
           textDirection: TextDirection.rtl,
         ),
-        backgroundColor: const Color(0xFF4CAF50),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
     );
   }
@@ -531,7 +683,7 @@ class _SearchScreenState extends State<SearchScreen> {
           'تشغيل: ${result.title}',
           textDirection: TextDirection.rtl,
         ),
-        backgroundColor: const Color(0xFF2196F3),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
       ),
     );
   }
@@ -543,7 +695,7 @@ class _SearchScreenState extends State<SearchScreen> {
           'مشاركة: ${result.title}',
           textDirection: TextDirection.rtl,
         ),
-        backgroundColor: const Color(0xFFFF9800),
+        backgroundColor: Theme.of(context).colorScheme.tertiary,
       ),
     );
   }
@@ -552,23 +704,23 @@ class _SearchScreenState extends State<SearchScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF0F3460),
-        title: const Text(
+        backgroundColor: Theme.of(context).cardTheme.color,
+        title: Text(
           'البحث الصوتي',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color),
           textDirection: TextDirection.rtl,
         ),
-        content: const Text(
+        content: Text(
           'سيتم إضافة ميزة البحث الصوتي قريباً',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
           textDirection: TextDirection.rtl,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text(
+            child: Text(
               'حسناً',
-              style: TextStyle(color: Color(0xFF4CAF50)),
+              style: TextStyle(color: Theme.of(context).primaryColor),
             ),
           ),
         ],
@@ -593,4 +745,4 @@ class SearchResult {
     this.surahNumber,
     this.ayahNumber,
   });
-} 
+}
